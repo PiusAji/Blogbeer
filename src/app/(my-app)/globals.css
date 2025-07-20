@@ -1,0 +1,78 @@
+@import "./fonts.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-satoshi;
+  }
+}
+
+.bg-texture {
+  background-image: url("/bg-texture1.webp");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-blend-mode: multiply;
+}
+
+.bg-texture-mirror {
+  background-image: url("/bg-texture-mirrored.webp");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-blend-mode: multiply;
+}
+
+@keyframes borderGlow {
+  0% {
+    border-color: rgb(228, 228, 231); /* zinc-200 */
+  }
+  25% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  50% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  75% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  100% {
+    border-color: rgb(228, 228, 231); /* zinc-200 */
+  }
+}
+
+@keyframes borderAboutGlow {
+  0% {
+    border-color: rgb(251, 178, 126); /* orange-500 */
+  }
+  25% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  50% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  75% {
+    border-color: rgb(249, 115, 22); /* orange-500 */
+  }
+  100% {
+    border-color: rgb(251, 178, 126); /* orange-500 */
+  }
+}
+
+.video-glow {
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+.borderAbout-glow {
+  animation: borderAboutGlow 2s ease-in-out infinite;
+}
+
+/* Embla Carousel Styles can be removed as they are now applied directly in the component */
