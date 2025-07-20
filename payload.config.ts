@@ -2,6 +2,12 @@ import { buildConfig } from "payload";
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import sharp from "sharp";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "@/app/(my-app)/utils/cloudinary";
+import fs from "fs";
+import path from "path";
 
 export default buildConfig({
   admin: {
@@ -14,7 +20,10 @@ export default buildConfig({
         read: () => true,
       },
       upload: {
+        // Keep staticDir for local development
         staticDir: "media",
+        // Disable image processing since Cloudinary will handle it
+        disableLocalStorage: process.env.NODE_ENV === "production",
         imageSizes: [
           {
             name: "thumbnail",
@@ -49,7 +58,95 @@ export default buildConfig({
           name: "alt",
           type: "text",
         },
+        {
+          name: "cloudinaryUrl",
+          type: "text",
+          admin: {
+            readOnly: true,
+            description: "Cloudinary CDN URL",
+          },
+        },
+        {
+          name: "cloudinaryPublicId",
+          type: "text",
+          admin: {
+            readOnly: true,
+            hidden: true,
+          },
+        },
       ],
+      hooks: {
+        afterChange: [
+          async ({ doc, operation, req }) => {
+            // Upload to Cloudinary on create
+            if (operation === "create" && doc.filename) {
+              try {
+                let fileBuffer: Buffer;
+
+                // In development, read from local file
+                if (process.env.NODE_ENV === "development") {
+                  const filePath = path.join(
+                    process.cwd(),
+                    "media",
+                    doc.filename
+                  );
+                  if (fs.existsSync(filePath)) {
+                    fileBuffer = fs.readFileSync(filePath);
+                  } else {
+                    console.error(`File not found: ${filePath}`);
+                    return;
+                  }
+                } else {
+                  // In production, the file should be in req.file or similar
+                  // This depends on how Payload handles uploads in serverless
+                  if (req.file && req.file.data) {
+                    fileBuffer = req.file.data;
+                  } else {
+                    console.error("No file data available for upload");
+                    return;
+                  }
+                }
+
+                // Upload to Cloudinary
+                const { url, public_id } = await uploadToCloudinary(
+                  fileBuffer,
+                  doc.filename,
+                  "payload-media"
+                );
+
+                // Update the document in the database
+                await req.payload.update({
+                  collection: "media",
+                  id: doc.id,
+                  data: {
+                    cloudinaryUrl: url,
+                    cloudinaryPublicId: public_id,
+                  },
+                });
+
+                console.log(`Uploaded ${doc.filename} to Cloudinary: ${url}`);
+              } catch (error) {
+                console.error("Error uploading to Cloudinary:", error);
+              }
+            }
+          },
+        ],
+        afterDelete: [
+          async ({ doc }) => {
+            // Delete from Cloudinary when document is deleted
+            if (doc.cloudinaryPublicId) {
+              try {
+                await deleteFromCloudinary(doc.cloudinaryPublicId);
+                console.log(
+                  `Deleted ${doc.cloudinaryPublicId} from Cloudinary`
+                );
+              } catch (error) {
+                console.error("Error deleting from Cloudinary:", error);
+              }
+            }
+          },
+        ],
+      },
     },
 
     // Categories Collection - for blog post categories

@@ -1,4 +1,4 @@
-import { Post } from "../../../../../../payload-types";
+import { Media, Post } from "../../../../../../payload-types";
 import { getRecentPosts } from "../../../lib/api";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,6 +6,33 @@ import Link from "next/link";
 interface PostAboutProps {
   post: Post;
 }
+
+// Function to get the best available image URL for hero (full size)
+const getAboutImageUrl = (featuredImage: Media | null | undefined) => {
+  if (!featuredImage) return "/placeholder-image.jpg";
+
+  // 1. First priority: Cloudinary URL (for production)
+  if (featuredImage.cloudinaryUrl) {
+    return featuredImage.cloudinaryUrl;
+  }
+
+  // 2. Second priority: Cloudinary public ID with optimization for hero image
+  if (featuredImage.cloudinaryPublicId) {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (cloudName) {
+      // Hero images should be high quality and optimized for large display
+      return `https://res.cloudinary.com/${cloudName}/image/upload/w_1920,h_1080,c_fill,q_auto:good,f_auto/${featuredImage.cloudinaryPublicId}`;
+    }
+  }
+
+  // 3. Third priority: Original local URL
+  if (featuredImage.url) {
+    return featuredImage.url;
+  }
+
+  // 4. Fallback placeholder
+  return "/placeholder-image.jpg";
+};
 
 function getPostContent(content: Post["content"]): string {
   if (!content?.root?.children) return "No content available";
@@ -83,11 +110,7 @@ export default async function PostAbout({ post }: PostAboutProps) {
                   <div className="w-24 h-24 relative">
                     {typeof recentPost.featuredImage === "object" && (
                       <Image
-                        src={
-                          recentPost.featuredImage?.sizes?.thumbnail?.url ||
-                          recentPost.featuredImage?.url ||
-                          "/placeholder.jpg"
-                        }
+                        src={getAboutImageUrl(recentPost.featuredImage)}
                         alt={recentPost.featuredImage?.alt || recentPost.title}
                         fill
                         className="object-cover rounded-md"

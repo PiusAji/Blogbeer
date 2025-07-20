@@ -11,6 +11,33 @@ function isPopulatedMedia(
   return typeof featuredImage === "object" && featuredImage !== null;
 }
 
+// Function to get the best available image URL for hero (full size)
+const getHeroImageUrl = (featuredImage: Media | null | undefined) => {
+  if (!featuredImage) return "/placeholder-image.jpg";
+
+  // 1. First priority: Cloudinary URL (for production)
+  if (featuredImage.cloudinaryUrl) {
+    return featuredImage.cloudinaryUrl;
+  }
+
+  // 2. Second priority: Cloudinary public ID with optimization for hero image
+  if (featuredImage.cloudinaryPublicId) {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (cloudName) {
+      // Hero images should be high quality and optimized for large display
+      return `https://res.cloudinary.com/${cloudName}/image/upload/w_1920,h_1080,c_fill,q_auto:good,f_auto/${featuredImage.cloudinaryPublicId}`;
+    }
+  }
+
+  // 3. Third priority: Original local URL
+  if (featuredImage.url) {
+    return featuredImage.url;
+  }
+
+  // 4. Fallback placeholder
+  return "/placeholder-image.jpg";
+};
+
 export default function PostHero({ post }: PostHeroProps) {
   return (
     <section className="relative w-full h-full">
@@ -19,11 +46,12 @@ export default function PostHero({ post }: PostHeroProps) {
 
         {isPopulatedMedia(post.featuredImage) && (
           <Image
-            src={post.featuredImage.url || "/placeholder-image.jpg"}
+            src={getHeroImageUrl(post.featuredImage)}
             alt={post.featuredImage.alt || post.title}
             fill
             className="object-cover opacity-90 mix-blend-multiply"
             priority
+            sizes="100vw"
           />
         )}
         <div className="absolute inset-0 bg-black/40 z-20"></div>

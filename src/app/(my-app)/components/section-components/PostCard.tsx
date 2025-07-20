@@ -16,6 +16,37 @@ function isPopulatedMedia(
   return typeof featuredImage === "object" && featuredImage !== null;
 }
 
+// Function to get the best available image URL
+const getImageUrl = (featuredImage: Media | null | undefined) => {
+  if (!featuredImage) return "/placeholder-image.jpg";
+
+  // 1. First priority: Cloudinary URL (for production)
+  if (featuredImage.cloudinaryUrl) {
+    return featuredImage.cloudinaryUrl;
+  }
+
+  // 2. Second priority: Cloudinary public ID with transformation for thumbnail
+  if (featuredImage.cloudinaryPublicId) {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (cloudName) {
+      return `https://res.cloudinary.com/${cloudName}/image/upload/w_400,h_300,c_fill,q_auto,f_auto/${featuredImage.cloudinaryPublicId}`;
+    }
+  }
+
+  // 3. Third priority: Local thumbnail size
+  if (featuredImage.sizes?.thumbnail?.url) {
+    return featuredImage.sizes.thumbnail.url;
+  }
+
+  // 4. Fourth priority: Original local URL
+  if (featuredImage.url) {
+    return featuredImage.url;
+  }
+
+  // 5. Fallback placeholder
+  return "/placeholder-image.jpg";
+};
+
 export default function PostCard({ post }: PostCardProps) {
   const iconStyles =
     "w-4 h-4 text-slate-800 hover:text-orange-500 transition-colors duration-500";
@@ -36,11 +67,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className="relative w-full aspect-video md:aspect-[4/3] md:col-span-4">
         {isPopulatedMedia(post.featuredImage) && (
           <Image
-            src={
-              post.featuredImage?.sizes?.thumbnail?.url ||
-              post.featuredImage?.url ||
-              "/placeholder-image.jpg" // Add a fallback placeholder
-            }
+            src={getImageUrl(post.featuredImage)}
             alt={post.featuredImage?.alt || post.title}
             fill
             className="w-full h-full object-cover"
