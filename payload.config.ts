@@ -601,7 +601,9 @@ export default buildConfig({
   db: mongooseAdapter({
     url:
       process.env.DATABASE_URI ||
-      "mongodb+srv://dbBlogbeer:Kiddy999%40@cluster0.azmymho.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0",
+      (() => {
+        throw new Error("DATABASE_URI environment variable is required");
+      })(),
     connectOptions: {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
