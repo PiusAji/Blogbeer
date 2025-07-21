@@ -17,6 +17,31 @@ interface CategorySliderProps {
   categories: ValidCategory[];
 }
 
+// Function to get the best available image URL for category slider
+const getCategoryImageUrl = (featuredImage: Media) => {
+  // 1. First priority: Cloudinary URL (for production)
+  if (featuredImage.cloudinaryUrl) {
+    return featuredImage.cloudinaryUrl;
+  }
+
+  // 2. Second priority: Cloudinary public ID with optimization for category slider
+  if (featuredImage.cloudinaryPublicId) {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    if (cloudName) {
+      // Category slider images - medium size with good quality
+      return `https://res.cloudinary.com/${cloudName}/image/upload/w_400,h_300,c_fill,q_auto:good,f_auto/${featuredImage.cloudinaryPublicId}`;
+    }
+  }
+
+  // 3. Third priority: Existing thumbnail or original URL
+  if (featuredImage.sizes?.thumbnail?.url) {
+    return featuredImage.sizes.thumbnail.url;
+  }
+
+  // 4. Fallback to original URL
+  return featuredImage.url || "/placeholder-image.jpg";
+};
+
 export const CategorySlider: React.FC<CategorySliderProps> = ({
   categories,
 }) => {
@@ -68,11 +93,7 @@ export const CategorySlider: React.FC<CategorySliderProps> = ({
               >
                 <Image
                   className="block h-full w-full object-cover"
-                  src={
-                    category.featuredImage.sizes?.thumbnail?.url ||
-                    category.featuredImage.url ||
-                    ""
-                  }
+                  src={getCategoryImageUrl(category.featuredImage)}
                   alt={category.featuredImage.alt || category.name}
                   width={400}
                   height={300}

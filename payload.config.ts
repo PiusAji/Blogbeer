@@ -599,7 +599,9 @@ export default buildConfig({
     outputFile: "payload-types.ts",
   },
   db: mongooseAdapter({
-    url: process.env.DATABASE_URI || "mongodb://localhost:27017/my-blog-app",
+    url:
+      process.env.DATABASE_URI ||
+      "mongodb+srv://dbBlogbeer:Kiddy999%40@cluster0.azmymho.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0",
     connectOptions: {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,

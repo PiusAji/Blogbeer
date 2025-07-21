@@ -27,6 +27,26 @@ const migrateMediaToCloudinary = async () => {
   await payload.init({
     config,
   });
+  // Add this after payload.init():
+  const testRecord = await payload.findByID({
+    collection: "media",
+    id: "6871e2f259151a53dab56189", // Use the ID from your Compass result
+  });
+  console.log(
+    "Found record:",
+    testRecord.filename,
+    "Has Cloudinary URL:",
+    !!testRecord.cloudinaryUrl
+  );
+
+  // Add these debug lines:
+  console.log("Connected to database:", payload.db.connection.name);
+  console.log("Database host:", payload.db.connection.host);
+  console.log("Database port:", payload.db.connection.port);
+
+  // Check if we're actually connected to Atlas:
+  const adminResult = await payload.db.connection.db.admin().serverStatus();
+  console.log("Server info:", adminResult.host);
 
   try {
     // Get all media documents that don't have Cloudinary URLs
@@ -134,6 +154,7 @@ const migrateMediaToCloudinary = async () => {
     console.log(
       `📊 Final stats: ${totalWithCloudinary}/${totalMedia} records have Cloudinary URLs`
     );
+    console.log("MongoDB URI:", process.env.DATABASE_URI);
   } catch (error) {
     console.error("Migration failed:", error);
   } finally {

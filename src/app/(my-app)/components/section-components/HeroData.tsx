@@ -24,10 +24,35 @@ export default function HeroContent({ heroData }: HeroProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Simple function to get hero video URL
+  const getHeroVideoUrl = (videoMedia: Media | null | undefined) => {
+    if (!videoMedia) return null;
+
+    // 1. First priority: Cloudinary URL (for production)
+    if (videoMedia.cloudinaryUrl) {
+      return videoMedia.cloudinaryUrl;
+    }
+
+    // 2. Second priority: Cloudinary public ID with basic optimization
+    if (videoMedia.cloudinaryPublicId) {
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      if (cloudName) {
+        return `https://res.cloudinary.com/${cloudName}/video/upload/q_auto,f_auto/${videoMedia.cloudinaryPublicId}`;
+      }
+    }
+
+    // 3. Third priority: Original local URL
+    if (videoMedia.url) {
+      return getFullMediaUrl(videoMedia.url);
+    }
+
+    return null;
+  };
+
+  // Keep your existing function for backward compatibility
   const getFullMediaUrl = (url: string) => {
     const PAYLOAD_SERVER_URL =
       process.env.NEXT_PUBLIC_PAYLOAD_URL || "http://localhost:3000";
-    // Ensure the URL starts with a slash
     const relativeUrl = url.startsWith("/") ? url : `/${url}`;
     return `${PAYLOAD_SERVER_URL}${relativeUrl}`;
   };
@@ -102,10 +127,10 @@ export default function HeroContent({ heroData }: HeroProps) {
                 playsInline
                 preload="none"
               >
-                {heroData?.video?.url && (
+                {heroData?.video?.url && getHeroVideoUrl(heroData.video) && (
                   <source
-                    src={getFullMediaUrl(heroData.video.url ?? "")}
-                    type={heroData?.video.mimeType ?? ""}
+                    src={getHeroVideoUrl(heroData.video)!} // Non-null assertion since we just checked
+                    type={heroData.video.mimeType || "video/mp4"}
                   />
                 )}
                 {/* Fallback for browsers that don't support video */}
